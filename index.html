@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 <style>
-/* ALL YOUR EXISTING CSS STYLES - COMPLETELY PRESERVED */
+/* ALL EXISTING CSS STYLES - PRESERVED */
 * {
     margin: 0;
     padding: 0;
@@ -97,6 +97,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .login-form .form-group {
     margin-bottom: 20px;
+    position: relative;
 }
 
 .login-form label {
@@ -141,6 +142,30 @@ h1, h2, h3, h4, h5, h6 {
     background: var(--primary-dark);
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);
+}
+
+/* Password field with toggle */
+.password-field {
+    position: relative;
+}
+
+.password-field input {
+    padding-right: 45px !important;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: var(--text-light);
+    transition: color 0.3s;
+    z-index: 10;
+}
+
+.toggle-password:hover {
+    color: var(--primary);
 }
 
 .demo-credentials {
@@ -611,6 +636,7 @@ tr:hover {
 /* Forms */
 .form-group {
     margin-bottom: 20px;
+    position: relative;
 }
 
 .form-group label {
@@ -645,6 +671,30 @@ tr:hover {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 20px;
+}
+
+/* Password toggle styles */
+.password-field {
+    position: relative;
+}
+
+.password-field input {
+    padding-right: 45px !important;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: var(--text-light);
+    transition: color 0.3s;
+    z-index: 10;
+}
+
+.toggle-password:hover {
+    color: var(--primary);
 }
 
 /* Search Bar */
@@ -1743,16 +1793,19 @@ img, svg, iframe, video, embed {
                 <small style="color: var(--text-light);">KICD Compliant | CBC Ready | 2026</small>
             </div>
             
-            <form class="login-form" onsubmit="handleLogin(event)">
+            <form class="login-form" id="loginForm" onsubmit="return false;">
                 <div class="form-group">
                     <label><i class="fas fa-user"></i> Username</label>
-                    <input type="text" id="loginUsername" placeholder="Enter your username" required>
+                    <input type="text" id="loginUsername" placeholder="Enter your username" required autocomplete="off">
                 </div>
                 <div class="form-group">
                     <label><i class="fas fa-lock"></i> Password</label>
-                    <input type="password" id="loginPassword" placeholder="Enter your password" required>
+                    <div class="password-field">
+                        <input type="password" id="loginPassword" placeholder="Enter your password" required autocomplete="off">
+                        <i class="fas fa-eye toggle-password" onclick="togglePasswordVisibility('loginPassword', this)"></i>
+                    </div>
                 </div>
-                <button type="submit"><i class="fas fa-sign-in-alt"></i> Login to Dashboard</button>
+                <button type="button" onclick="handleLogin(event)"><i class="fas fa-sign-in-alt"></i> Login to Dashboard</button>
             </form>
 
             <div class="demo-credentials">
@@ -2731,7 +2784,7 @@ img, svg, iframe, video, embed {
         </div>
     </div>
 
-    <!-- MODALS - ALL YOUR EXISTING MODALS ARE HERE (PRESERVED) -->
+    <!-- MODALS - ALL EXISTING MODALS ARE HERE (PRESERVED) -->
     <!-- Add User Modal -->
     <div id="addUserModal" class="modal">
         <div class="modal-content">
@@ -2757,7 +2810,10 @@ img, svg, iframe, video, embed {
                     </div>
                     <div class="form-group">
                         <label>Password *</label>
-                        <input type="password" id="userPassword" required>
+                        <div class="password-field">
+                            <input type="password" id="userPassword" required>
+                            <i class="fas fa-eye toggle-password" onclick="togglePasswordVisibility('userPassword', this)"></i>
+                        </div>
                     </div>
                 </div>
                 <div class="form-row">
@@ -3352,7 +3408,6 @@ img, svg, iframe, video, embed {
         </div>
     </div>
 
-
     <script>
     // ==================== CONFIGURATION ====================
     const API_BASE_URL = 'http://localhost:5000/api';
@@ -3422,6 +3477,20 @@ img, svg, iframe, video, embed {
         ]
     };
 
+    // ==================== PASSWORD TOGGLE FUNCTION ====================
+    function togglePasswordVisibility(inputId, iconElement) {
+        const input = document.getElementById(inputId);
+        if (input.type === 'password') {
+            input.type = 'text';
+            iconElement.classList.remove('fa-eye');
+            iconElement.classList.add('fa-eye-slash');
+        } else {
+            input.type = 'password';
+            iconElement.classList.remove('fa-eye-slash');
+            iconElement.classList.add('fa-eye');
+        }
+    }
+
     // ==================== HELPER FUNCTIONS ====================
     async function fetchWithAuth(url, options = {}) {
         const token = localStorage.getItem('token');
@@ -3437,7 +3506,7 @@ img, svg, iframe, video, embed {
 
     // ==================== AUTHENTICATION ====================
     async function handleLogin(event) {
-        event.preventDefault();
+        if (event) event.preventDefault();
         
         const username = document.getElementById('loginUsername').value;
         const password = document.getElementById('loginPassword').value;
@@ -3455,9 +3524,9 @@ img, svg, iframe, video, embed {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({ username, password })
-            });
+            }).catch(() => null);
 
-            if (response.ok) {
+            if (response && response.ok) {
                 const data = await response.json();
                 
                 // Store the token
@@ -3534,7 +3603,7 @@ img, svg, iframe, video, embed {
                 
                 showAlert(`Welcome back, ${user.name}! You are logged in as ${getRoleDisplay(user.role)}. (Offline Mode - Backend not available)`, 'info');
             } else {
-                showAlert('Connection error. Is the backend running? Using fallback authentication.', 'warning');
+                showAlert('Connection error. Using fallback authentication.', 'warning');
             }
         }
     }
@@ -3553,10 +3622,10 @@ img, svg, iframe, video, embed {
         
         document.getElementById('sidebarUserName').textContent = user.name;
         document.getElementById('sidebarUserRole').textContent = getRoleDisplay(user.role);
-        document.getElementById('sidebarUserId').textContent = user.professionalId;
+        document.getElementById('sidebarUserId').textContent = user.professionalId || user.professional_id || '';
         document.getElementById('headerUserName').textContent = user.name;
         document.getElementById('headerUserRole').textContent = getRoleDisplay(user.role);
-        document.getElementById('headerUserId').textContent = user.professionalId;
+        document.getElementById('headerUserId').textContent = user.professionalId || user.professional_id || '';
     }
 
     function getRoleDisplay(role) {
@@ -3741,7 +3810,7 @@ img, svg, iframe, video, embed {
         document.getElementById('pageTitle').textContent = titles[sectionId] || sectionId;
         
         document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-        if (event) event.target.classList.add('active');
+        if (event && event.target) event.target.classList.add('active');
 
         // Load section data
         switch(sectionId) {
@@ -5067,15 +5136,6 @@ img, svg, iframe, video, embed {
         updateRecipientCount();
     }
 
-    function selectAllStudentsSystem() {
-        const select = document.getElementById('messageStudents');
-        for (let option of select.options) {
-            option.selected = true;
-        }
-        updateRecipientCount();
-        showAlert('All students selected', 'success');
-    }
-
     function clearSelection() {
         const select = document.getElementById('messageStudents');
         for (let option of select.options) {
@@ -5107,12 +5167,12 @@ img, svg, iframe, video, embed {
         const content = document.getElementById('messageContent');
         
         const templates = {
-            feereminder: 'Dear Parent, this is a reminder that school fees balance of KES [amount] is due. Please clear at your earliest convenience.\n\nPayment Methods: Cash, Bank Deposit, Cheque, Bank Transfer, M-Pesa\n\nThank you.\n- Kagema School',
-            examnotice: 'EXAM NOTICE: End term examinations will begin on [date]. Please ensure your child is well prepared and attends all papers.\n\nExamination Timetable is available at the school notice board.\n\n- Kagema School',
+            fee: 'Dear Parent, this is a reminder that school fees balance of KES [amount] is due. Please clear at your earliest convenience.\n\nPayment Methods: Cash, Bank Deposit, Cheque, Bank Transfer, M-Pesa\n\nThank you.\n- Kagema School',
+            exam: 'EXAM NOTICE: End term examinations will begin on [date]. Please ensure your child is well prepared and attends all papers.\n\nExamination Timetable is available at the school notice board.\n\n- Kagema School',
             meeting: 'PARENT-TEACHER MEETING\n\nDear Parent,\n\nThere will be a parent-teacher conference on:\n📅 Date: [date]\n⏰ Time: [time]\n📍 Venue: School Hall\n\nYour attendance is important to discuss your child\'s progress.\n\n- Kagema School',
-            performancealert: 'PERFORMANCE ALERT\n\nDear Parent,\n\nWe have noticed that your child needs improvement in [subject]. Current grade: [grade].\n\nPlease arrange a meeting with the subject teacher to discuss support strategies.\n\n- Kagema School',
+            performance: 'PERFORMANCE ALERT\n\nDear Parent,\n\nWe have noticed that your child needs improvement in [subject]. Current grade: [grade].\n\nPlease arrange a meeting with the subject teacher to discuss support strategies.\n\n- Kagema School',
             graduation: 'GRADUATION CEREMONY\n\nDear Parent,\n\nCongratulations! Your child has successfully completed [grade]. The graduation ceremony will be held on [date] at [time] in the school compound.\n\nWe look forward to celebrating with you.\n\n- Kagema School',
-            reportcard: 'REPORT CARD READY\n\nDear Parent,\n\nYour child\'s report card for Term [term] is ready. You can:\n1. Collect from the school\n2. Download from the parent portal\n3. Receive via WhatsApp\n\nPlease contact the school for more information.\n\n- Kagema School',
+            report: 'REPORT CARD READY\n\nDear Parent,\n\nYour child\'s report card for Term [term] is ready. You can:\n1. Collect from the school\n2. Download from the parent portal\n3. Receive via WhatsApp\n\nPlease contact the school for more information.\n\n- Kagema School',
             holiday: 'HOLIDAY NOTICE\n\nDear Parent,\n\nSchools will close for holidays on [date] and re-open on [date]. Please make appropriate arrangements for your child.\n\nHave a blessed holiday.\n\n- Kagema School',
             emergency: '🚨 EMERGENCY NOTICE 🚨\n\nDear Parent,\n\nDue to unforeseen circumstances, school will be closed today. Please pick up your child by [time].\n\nWe apologize for any inconvenience.\n\n- Kagema School'
         };
@@ -6034,7 +6094,7 @@ img, svg, iframe, video, embed {
     }
 
     // Global search
-    document.getElementById('globalSearch').addEventListener('keypress', (e) => {
+    document.getElementById('globalSearch')?.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
             const search = e.target.value.toLowerCase();
             const student = AppData.students.find(s => 
@@ -6196,18 +6256,9 @@ img, svg, iframe, video, embed {
         })();
 
         // Attach login form handler
-        const loginForm = document.querySelector('#loginPage form');
-        if (loginForm) {
-            loginForm.addEventListener('submit', handleLogin);
-            console.log('Login form handler attached');
-        } else {
-            console.error('Login form not found');
-        }
-
-        // Attach logout button handler
-        const logoutBtn = document.getElementById('logoutBtn');
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', logout);
+        const loginButton = document.querySelector('#loginPage button[type="button"]');
+        if (loginButton) {
+            loginButton.addEventListener('click', handleLogin);
         }
 
         // Show dashboard if already logged in
@@ -6220,4 +6271,6 @@ img, svg, iframe, video, embed {
             loadDashboardData();
         }
     });
-</script>
+    </script>
+</body>
+</html>
